@@ -1,5 +1,5 @@
 # n8n-static-video-automation
-[Uploading Gravar a tela_20250716_142730.webm…]()
+[Gravar a tela_20250716_142730.webm](https://github.com/user-attachments/assets/84ee4931-ff8b-4c40-8ee3-ff184d868bcb)
 
 Este workflow n8n automatiza a criação de vídeos estáticos através de um bot do Telegram. O sistema combina imagens e áudios enviados pelos usuários para gerar vídeos de alta qualidade.
 
