@@ -1,0 +1,1114 @@
+{
+  "name": "guerreiras-1",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "id": "84fd37a4-6afb-4a08-a1ca-0844d9d3eade",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        560
+      ],
+      "webhookId": "02767b02-d1f9-40ef-83f6-fffb05743628",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "media_queue",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chat_id",
+              "fieldValue": "={{ $('Switch').item.json.message.chat.id }}"
+            },
+            {
+              "fieldId": "filename_photo",
+              "fieldValue": "={{ $('Read/Write Files from Disk1').item.json.fileName }}"
+            }
+          ]
+        }
+      },
+      "id": "8c6c2249-7ebb-4a55-b04f-c712ed8642e3",
+      "name": "Insert Image Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        840,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "media_queue",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        }
+      },
+      "id": "cfaac8da-df26-4cf4-918c-bf387c974dc9",
+      "name": "Check If Both Media",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        220
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y -loop 1 -i {{ $('Check If Both Media').item.json.filename_photo }} -i audio_convertido.mp3 -c:v libx264 -crf 17 -c:a aac -b:a 320k -vf \"scale=-2:720,format=yuv420p\" -movflags +faststart -shortest saida_alta_qualidade.mp4"
+      },
+      "id": "b9b1c0b1-7f8f-472e-9823-5c7189f93410",
+      "name": "Generate Video",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2140,
+        440
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "filePath": "=/home/node/saida_alta_qualidade.mp4"
+      },
+      "id": "468e1a53-3757-42a4-8936-ffdc95a43ebc",
+      "name": "Read Video",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendVideo",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {
+          "fileName": "video.mp4"
+        }
+      },
+      "id": "d1f658c0-66af-4f9c-ace0-70d88fe0863f",
+      "name": "Send Telegram Video",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        440
+      ],
+      "webhookId": "35b9046c-35f5-41dc-9281-1897740b04c8",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.photo }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "3b8fe454-2598-454d-9341-c2d4cb6d1bc2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "58b7d0ae-1c4d-48e5-a561-02689a83738f",
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "38988e10-6a43-4c61-b12e-b0e7f34992c0",
+                    "leftValue": "=",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -60,
+        580
+      ],
+      "id": "a60e2104-036d-4f7c-b999-0bb99d34b86f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        560
+      ],
+      "id": "f28135c5-dfb5-4713-b0a3-f8649b96698c",
+      "name": "Telegram",
+      "webhookId": "3c0523ef-773d-4c99-91e8-253a44d1e3d9",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/data/{{ $json.result.file_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        420,
+        380
+      ],
+      "id": "5dff4dc1-cee4-460f-acdc-4a65d4f9f985",
+      "name": "Read/Write Files from Disk",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/data/{{ $json.result.file_path }}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "84ff7676-c6a4-49e8-91a5-16a7e02ed614",
+      "name": "Read/Write Files from Disk1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[3].file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        40,
+        60
+      ],
+      "id": "bee4ded0-efbb-4e3a-874e-1f0241862095",
+      "name": "Telegram1",
+      "webhookId": "5e176349-f02b-4ee0-b8f8-a6cfc65bfc0f",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "media_queue",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chat_id",
+              "fieldValue": "={{ $('Switch').item.json.message.chat.id }}"
+            },
+            {
+              "fieldId": "filename_audio",
+              "fieldValue": "={{ $('Read/Write Files from Disk').item.json.fileName }}"
+            }
+          ]
+        }
+      },
+      "id": "786c2d52-91cd-4a4f-af63-fbfe738caf59",
+      "name": "Insert Audio Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        900,
+        600
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Áudio Enviado",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        500
+      ],
+      "id": "1614d91f-c1b0-4973-983e-7392890fb3d3",
+      "name": "Telegram3",
+      "webhookId": "c97c5c5e-4728-47fa-8c53-eabf7160ba54",
+      "executeOnce": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Envie seu Áudio ou Imagem",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        740
+      ],
+      "id": "f1ba6384-1a4a-4865-9b8c-62df0e96552e",
+      "name": "Telegram4",
+      "webhookId": "26240559-1679-443d-b4c8-b1d0bdf44f21",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "media_queue",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "filename_photo",
+              "fieldValue": "={{ $('Read/Write Files from Disk1').item.json.fileName }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        840,
+        -160
+      ],
+      "id": "2c84db93-2087-4a54-9dd6-50c3822d31c5",
+      "name": "Supabase",
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "media_queue",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "filename_audio",
+              "fieldValue": "={{ $('Read/Write Files from Disk').item.json.fileName }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        900,
+        440
+      ],
+      "id": "836e0e91-8323-4ba1-b693-872e052a9c88",
+      "name": "Supabase1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.filename_audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "e1eccce1-6018-40f9-9295-ed058ad086e9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "no audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9bf2fb3-e4e2-4597-9685-5836dd01d560",
+                    "leftValue": "={{ $json.filename_photo }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "no photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b3f601e6-6ded-4da7-83b9-03bb0ab3316f",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1620,
+        220
+      ],
+      "id": "74ef9f9a-b9aa-43df-bdfc-1cb8905a44c7",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Envie um Audio",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2140,
+        60
+      ],
+      "id": "1308cced-766d-463b-90ff-d7665c81d729",
+      "name": "Telegram5",
+      "webhookId": "83acef95-66fe-4231-8aed-83ffeb502fb2",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Envie uma Imagem",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2140,
+        260
+      ],
+      "id": "38edfbb8-196a-4e63-9a52-1090b3c80e81",
+      "name": "Telegram6",
+      "webhookId": "a424c56e-f721-4cb3-a870-7a1185a31045",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "rm -rf /home/node/data/voice /home/node/data/photos /home/node/data/output && mkdir -p /home/node/data/voice /home/node/data/photos /home/node/data/output\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        440
+      ],
+      "id": "16a2002e-7ae8-4ba2-b790-ba9c94e6624d",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "media_queue",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        660,
+        380
+      ],
+      "id": "d905dce5-b245-41bb-ab41-4ee50e882f97",
+      "name": "Supabase2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e15fcc3f-6975-464f-979a-6025b3d3e7fc",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        580
+      ],
+      "id": "ca0422eb-7db5-416d-9f53-c2bda70b41b7",
+      "name": "If",
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "media_queue",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        620,
+        -200
+      ],
+      "id": "aa0edef0-2a64-41e0-b526-1599388362de",
+      "name": "Supabase3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e15fcc3f-6975-464f-979a-6025b3d3e7fc",
+              "leftValue": "={{ $json.filename_audio }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        620,
+        -20
+      ],
+      "id": "4c6e9b1a-15a9-4558-a847-dcf1234dcfb8",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "media_queue",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Check If Both Media').item.json.chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3020,
+        440
+      ],
+      "id": "6d1404a5-c17e-45b5-8acb-b004fa074f7b",
+      "name": "Supabase4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "xbbcixdK0qBDZp03",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y -i {{ $json.filename_audio }} -c:a libmp3lame -q:a 2 audio_convertido.mp3"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        340
+      ],
+      "id": "9ce0dae2-812b-4f1f-9e87-10d5366891a2",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Imagem Adicionada",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1140,
+        -80
+      ],
+      "id": "16bc0f9d-cdf0-4b9c-8739-c5216a53b927",
+      "name": "Telegram2",
+      "webhookId": "09533009-9dc1-41d4-8853-b78a94359a7d",
+      "credentials": {
+        "telegramApi": {
+          "id": "zJjolZJT822sSXct",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Image Supabase": {
+      "main": [
+        [
+          {
+            "node": "Telegram2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Both Media": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video": {
+      "main": [
+        [
+          {
+            "node": "Read Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Video": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Supabase2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Supabase3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Audio Supabase": {
+      "main": [
+        [
+          {
+            "node": "Telegram3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram3": {
+      "main": [
+        [
+          {
+            "node": "Check If Both Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        [
+          {
+            "node": "Telegram2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Supabase1": {
+      "main": [
+        [
+          {
+            "node": "Telegram3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Telegram5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Video": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase2": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Audio Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase3": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Image Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Supabase4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        [
+          {
+            "node": "Generate Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram2": {
+      "main": [
+        [
+          {
+            "node": "Check If Both Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "eb08f43d-5a08-4267-ba2e-238dd5d4edb2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "44519e6d8121646a991e853ed8721cba56df499091a00678423eebe28aee8912"
+  },
+  "id": "OUxEXp3xzHVavFgQ",
+  "tags": []
+}
