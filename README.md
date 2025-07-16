@@ -3,17 +3,6 @@
 
 Este workflow n8n automatiza a criação de vídeos estáticos através de um bot do Telegram. O sistema combina imagens e áudios enviados pelos usuários para gerar vídeos de alta qualidade.
 
-Fluxo Principal
-
-Telegram Trigger - Monitora mensagens recebidas no bot
-Switch de Classificação - Identifica se a mensagem contém foto, áudio ou outro tipo
-Processamento de Mídia - Baixa e armazena os arquivos localmente
-Controle de Estado - Usa Supabase para rastrear quais mídias cada usuário já enviou
-Verificação de Completude - Checa se o usuário enviou tanto imagem quanto áudio
-Geração de Vídeo - Usa FFmpeg para combinar imagem estática com áudio
-Entrega - Envia o vídeo final via Telegram
-Limpeza - Remove arquivos temporários e limpa o banco
-
 🛠️ Componentes Técnicos
 
 Telegram Bot API - Interface de comunicação
